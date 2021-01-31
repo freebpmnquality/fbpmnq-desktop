@@ -609,10 +609,6 @@ function readFile(file) {
         $('#bpmnLink').val('');
 
         analyzeDoc_Click();
-
-        window.onbeforeunload = function(e) {
-            return 'Are you sure you want to leave this page? The changes you made will be lost.';
-        };
     };
 }
 
