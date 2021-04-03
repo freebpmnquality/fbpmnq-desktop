@@ -336,6 +336,8 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
 
                 if (process[i].nodeName.toLowerCase().includes('startEvent'.toLowerCase())) {
                     if (outgoing !== 1) {
+                        warnings.invalidEvents++;
+
                         // color invalid start events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
                             'Start events should have one outgoing flow');
@@ -352,6 +354,8 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                     }
                 } else if (process[i].nodeName.toLowerCase().includes('endEvent'.toLowerCase())) {
                     if (incoming !== 1) {
+                        warnings.invalidEvents++;
+
                         // color invalid end events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
                             'End events should have one incoming flow');
