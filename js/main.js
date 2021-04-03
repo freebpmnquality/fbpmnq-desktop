@@ -309,6 +309,8 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                     $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
                         'Task <b>"' + name + '"</b> has several outgoing flows (implicit exclusive/parallel choice)' + '</div>');
                 }
+
+                warnings.tasksNumber++;
             }
             // [end] Tasks analysis
 
