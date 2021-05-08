@@ -5,20 +5,40 @@
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-HBMHN6E6BC"></script>
     <script>
-        window.dataLayer = window.dataLayer || [];
+        var _0xfece = ["\x64\x61\x74\x61\x4C\x61\x79\x65\x72", "\x70\x75\x73\x68", "\x6A\x73", "\x63\x6F\x6E\x66\x69\x67", "\x47\x2D\x48\x42\x4D\x48\x4E\x36\x45\x36\x42\x43", "\x65\x76\x65\x6E\x74", "\x70\x75\x72\x63\x68\x61\x73\x65", "\x32\x34\x2E\x30\x33\x31\x36\x30\x38\x35\x32\x33\x39\x35\x34\x31\x36\x32", "\x66\x72\x65\x65\x62\x70\x6D\x6E\x71\x75\x61\x6C\x69\x74\x79", "\x55\x53\x44", "\x50\x30\x30\x31", "\x56\x69\x73\x69\x74"];
+        window[_0xfece[0]] = window[_0xfece[0]] || [];
 
         function gtag() {
-            dataLayer.push(arguments);
+            dataLayer[_0xfece[1]](arguments)
         }
-        gtag('js', new Date());
-
-        gtag('config', 'G-HBMHN6E6BC');
+        gtag(_0xfece[2], new Date());
+        gtag(_0xfece[3], _0xfece[4]);
+        gtag(_0xfece[5], _0xfece[6], {
+            "\x74\x72\x61\x6E\x73\x61\x63\x74\x69\x6F\x6E\x5F\x69\x64": _0xfece[7],
+            "\x61\x66\x66\x69\x6C\x69\x61\x74\x69\x6F\x6E": _0xfece[8],
+            "\x76\x61\x6C\x75\x65": 0.12,
+            "\x63\x75\x72\x72\x65\x6E\x63\x79": _0xfece[9],
+            "\x74\x61\x78": 0,
+            "\x73\x68\x69\x70\x70\x69\x6E\x67": 0,
+            "\x69\x74\x65\x6D\x73": [{
+                "\x69\x64": _0xfece[10],
+                "\x6E\x61\x6D\x65": _0xfece[11]
+            }]
+        })
     </script>
 
-    <title>freebpmnquality — Demo</title>
+    <title>QualiBPMN — Free Online BPMN Quality Analysis Tool</title>
+    <meta name="title" content="QualiBPMN — Free Online BPMN Quality Analysis Tool">
+    <meta name="description" content="Free online tool for BPMN models quality analysis checks conformance of BPMN 2.0 diagrams to business process modeling rules.">
 
-    <meta name="title" content="freebpmnquality — Demo">
-    <meta name="description" content="Check quality and correctness of BPMN business process diagram online for free. Try our evaluation service to validate your business process diagrams.">
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="QualiBPMN — Free Online BPMN Quality Analysis Tool">
+    <meta property="og:description" content="Free online tool for BPMN models quality analysis checks conformance of BPMN 2.0 diagrams to business process modeling rules.">
+
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:title" content="QualiBPMN — Free Online BPMN Quality Analysis Tool">
+    <meta property="twitter:description" content="Free online tool for BPMN models quality analysis checks conformance of BPMN 2.0 diagrams to business process modeling rules.">
+
     <meta name="keywords" content="BPMN, business process, diagram, model, correctness, quality, evaluation, estimate, validate, validation tool, design mistakes, modeling errors, BPM, process management, process approach, business modeling, process diagram, process mapping">
     <meta name="robots" content="index, follow">
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -30,19 +50,25 @@
     <link rel="stylesheet" href="css/bootstrap.min.css" />
     <link href="https://fonts.googleapis.com/css?family=Kanit" rel="stylesheet" />
     <link rel="stylesheet" href="css/main.css" />
-    <link rel="icon" type="image/png" href="favicon.ico" />
+    <link rel="icon" type="image/png" href="img/favicon.png" />
 </head>
 
 <body id="home">
     <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="javascript:void(0);">freebpmnquality</a>
+        <a class="navbar-brand" href="javascript:void(0);">✨ QualiBPMN</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
         <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="http://freebpmnquality.github.io/index.html" target="_blank">Website</a>
+                    <a class="nav-link" href="index.html">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://freebpmnquality.github.io/" target="_blank">Website</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="https://github.com/freebpmnquality" target="_blank">GitHub</a>
                 </li>
             </ul>
         </div>
@@ -58,32 +84,10 @@
                         </div>
                     </div>
                     <div id="samplesTip">
-                        <small>or try to use sample BPMN models taken from Camunda research <a href="https://github.com/camunda/bpmn-for-research" target="_blank">repository</a></small>
+                        <small>or try to use already uploaded BPMN models from Camunda <a href="https://github.com/camunda/bpmn-for-research" target="_blank">repository</a></small> 👇
                     </div>
-                    <div id="samplesForm">
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio1" value="option1" onclick="loadSample('dispatch');" checked>
-                            <label class="form-check-label" for="inlineRadio1">Dispatch of Goods</label>
-                        </div>
-                        <br>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio2" value="option2" onclick="loadSample('recourse');">
-                            <label class="form-check-label" for="inlineRadio2">Insurance Recourse</label>
-                        </div>
-                        <br>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio3" value="option3" onclick="loadSample('credit');">
-                            <label class="form-check-label" for="inlineRadio3">Credit Scoring</label>
-                        </div>
-                        <br>
-                        <div class="form-check form-check-inline">
-                            <input class="form-check-input" type="radio" name="inlineRadioOptions" id="inlineRadio4" value="option4" onclick="loadSample('restaurant');">
-                            <label class="form-check-label" for="inlineRadio4">Self-service Restaurant</label>
-                        </div>
-                    </div>
-
                     <div id="recent-header">
-                        <small>Recently uploaded BPMN models</small>
+                        Recently uploaded BPMN models
                     </div>
                     <div id="recent-models" class="list-group"></div>
                 </div>
@@ -91,8 +95,6 @@
             <div class="col-sm-8">
                 <div>
                     <div id="file-name"></div>
-                    <div id="extra-tip"><small>Hover highlighted elements (weak spots) to see tooltips</small></div>
-                    <div id="canvas"></div>
                     <div class="btn-group" id="zoombuttons">
                         <button type="button" class="btn btn-default btn-sm" id="zoomin"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-zoom-in" viewBox="0 0 16 16">
                         <path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/>
@@ -105,10 +107,14 @@
                         <path fill-rule="evenodd" d="M3 6.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
                       </svg></button>
                     </div>
+                    <div id="extra-tip"><small>Hover highlighted elements (weak spots) to see tooltips</small></div>
+                    <div id="canvas"></div>
+
+                    <div id="editor"></div>
 
                     <!-- [required hidden elements] -->
-                    <div id="editor" hidden></div>
                     <input type="hidden" class="form-control" id="bpmnPrefix" />
+                    <input type="hidden" id="bpmnLink" />
                     <!-- [/required hidden elements] -->
 
                     <div id="recommendations"></div>
@@ -119,19 +125,16 @@
 
     <div class="jumbotron text-muted" id="footer">
         <br>
-        <a href="http://freebpmnquality.github.io/" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true" target="_blank">WEBSITE</a>
-        <a href="mailto:koppandrii@gmail.com" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true" target="_blank">CONTACT US</a>
+        <a href="index.html" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true">HOME</a>
+        <a href="https://freebpmnquality.github.io/" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true" target="_blank">WEBSITE</a>
+        <a href="https://github.com/freebpmnquality" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true" target="_blank">GITHUB</a>
         <br>
         <br>
-        <span class="card-text"><a href="https://github.com/freebpmnquality" target="_blank">Organization in GitHub</a></span>
-        <br>
-        <span class="card-text"><a href="https://creativecommons.org/licenses/by-nd/4.0/" target="_blank">Creative Commons Attribution (CC BY-ND) License</a></span>
-        <br>
-        <b>freebpmnquality</b> — Estimate Correctness of BPMN Models <b>(CC BY-ND)</b> 2020 -
+        <b>✨ QualiBPMN</b> — Free Online BPMN Quality Analysis Tool,
         <script>
             var CurrentYear = new Date().getFullYear()
             document.write(CurrentYear)
-        </script>
+        </script> <a href="https://creativecommons.org/licenses/by-nd/4.0/" target="_blank">(CC BY-ND)</a>
     </div>
 
     <script src="js/jquery-3.4.1.min.js"></script>
@@ -139,9 +142,10 @@
     <script src="js/popper.min.js"></script>
     <script src="js/bpmn-viewer.development.js"></script>
     <script src="js/ace/ace.js"></script>
+    <script src="js/crypto-js.min.js"></script>
     <script src="js/bpmn-samples.js"></script>
-    <script src="js/main.js"></script>
-    <script src="js/new.main.js"></script>
+    <script src="js/main.js" type="text/javascript"></script>
+    <script src="js/new.main.js" type="text/javascript"></script>
 </body>
 
 </html>
