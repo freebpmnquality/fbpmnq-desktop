@@ -217,7 +217,7 @@ body {
 }
 
 #title {
-    background-image: url('/analytics/img/bg.png');
+    background-image: url('https://cloudfreebpmnquality.herokuapp.com/analytics/img/bg.png');
     padding-top: 5%;
     padding-bottom: 5%;
 }
