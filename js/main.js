@@ -139,7 +139,7 @@ function loadSample(sample) {
     editor.setValue('');
     editor.insert(data);
 
-    $('#file-name').html("🔷 " + sampleFileMapping[sample]);
+    $('#file-name').html("💠 " + sampleFileMapping[sample]);
 
     defineXMLNamespace(data);
 
@@ -153,7 +153,7 @@ function loadDocumentByLink() {
         editor.setValue('');
         editor.insert(data);
 
-        $('#file-name').html("🔷 " + bpmnLink);
+        $('#file-name').html("💠 " + bpmnLink);
 
         defineXMLNamespace(data);
 
@@ -521,7 +521,7 @@ var lastFileName = null;
 function readFile(file) {
     var reader = new FileReader();
 
-    $('#file-name').text("🔷 " + file.name);
+    $('#file-name').text("💠 " + file.name);
 
     reader.readAsText(file);
 

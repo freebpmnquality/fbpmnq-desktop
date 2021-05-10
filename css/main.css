@@ -215,3 +215,9 @@ body {
 #file-name {
     word-wrap: break-word;
 }
+
+#title {
+    background-image: url('/analytics/img/bg.png');
+    padding-top: 5%;
+    padding-bottom: 5%;
+}

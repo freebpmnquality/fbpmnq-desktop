@@ -1,21 +1,15 @@
 var recentBPMNModels = [];
 var modelNamesIndex = [];
 
-const displayRecentBPMNModels = function() {
+const displayRecentBPMNModels = function(activeModelName) {
     $("#recent-models").empty();
 
-    let num = 1;
-
-    for (let i = recentBPMNModels.length - 1; i >= 0; i--) {
+    for (let i = 0; i < recentBPMNModels.length; i++) {
         const modelName = recentBPMNModels[i].name;
+        const isActive = (activeModelName === modelName) ? "active" : "";
 
         $("#recent-models").append(`
-            <a href="javascript:void(0);" class="list-group-item list-group-item-action recent-item" onclick="loadRecentBPMNModel('${modelName}');">
-                <span class="badge badge-pill badge-info">${num}</span> <small>${modelName}</small>
-            </a>
-        `);
-
-        num++;
+            <a href="javascript:void(0);" class="list-group-item list-group-item-action ${isActive} recent-item" data-toggle="list" onclick="loadRecentBPMNModel('${modelName}');">💠 <small>${modelName}</small></a>`);
     }
 };
 
@@ -25,7 +19,7 @@ const loadRecentBPMNModel = function(recentModelName) {
 
         if (recentModelName === modelName) {
             lastFileName = modelName;
-            $("#file-name").text("🔷 " + modelName);
+            $("#file-name").text("💠 " + modelName);
 
             const loadedModel = recentBPMNModels[i].content;
 
@@ -50,21 +44,16 @@ document.addEventListener("eReadFile", function(e) {
     const loadedModel = editor.getValue();
     const modelName = lastFileName;
 
-    if (modelNamesIndex.includes(modelName)) {
-        const index = modelNamesIndex.indexOf(modelName);
+    if (!modelNamesIndex.includes(modelName)) {
+        recentBPMNModels.push({
+            "name": modelName,
+            "content": loadedModel
+        });
 
-        modelNamesIndex.splice(index, 1);
-        recentBPMNModels.splice(index, 1);
+        modelNamesIndex.push(modelName);
     }
 
-    recentBPMNModels.push({
-        "name": modelName,
-        "content": loadedModel
-    });
-
-    modelNamesIndex.push(modelName);
-
-    displayRecentBPMNModels();
+    displayRecentBPMNModels(modelName);
 });
 
 {
@@ -90,5 +79,5 @@ document.addEventListener("eReadFile", function(e) {
     modelNamesIndex.push("credit.bpmn");
     modelNamesIndex.push("restaurant.bpmn");
 
-    displayRecentBPMNModels();
+    displayRecentBPMNModels(recentBPMNModels[0].name);
 }
