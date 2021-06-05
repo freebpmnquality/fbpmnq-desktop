@@ -206,30 +206,112 @@ function resizeCanvas(change) {
 
 var coloredNodes = [];
 
-function colorNode(elementId, overlays, elementRegistry, tip) {
+function colorNode(elementId, overlays, elementRegistry, tip, elementData, isFault = true) {
     if (coloredNodes.includes(elementId)) {
         return;
     }
 
-    var shape = elementRegistry.get(elementId);
+    const symbol = isFault ? '❌' : '✔️';
+    const message = isFault ? `<small class="tiptext">${tip}</small>` : `<small class="finetext">No changes required</small>`;
 
-    var $overlayHtml =
-        $('<div class="highlight-overlay">')
-        .css({
-            width: shape.width,
-            height: shape.height
-        })
-        .html('<span class="tiptext">' + tip + '</span>');
+    elementData.name = elementData.name.replace(/(?:\r\n|\r|\n)/g, ' ');
 
     overlays.add(elementId, {
-        position: {
-            top: 0,
-            left: 0
-        },
-        html: $overlayHtml
+        position: { top: -10, left: -10 },
+        html: $('<div class="highlight-overlay">').html(`<span style="cursor: pointer;" onclick="showSuggestionModal('${tip}', '${elementData.name}', '${elementData.type}', '${elementData.incoming}', '${elementData.outgoing}')">${symbol}</span>${message}`)
     });
 
     coloredNodes.push(elementId);
+}
+
+function showSuggestionModal(tip, name, type, incoming, outgoing) {
+    $('#suggestionModal').modal('show');
+    let suggestChanges = false;
+
+    if (tip === undefined || tip === null || tip === 'null') {
+        tip = '✔️ No changes required';
+    } else {
+        tip = `❌ ${tip}`;
+        suggestChanges = true;
+    }
+
+    $('#tipText').empty();
+    $('#tipText').append(tip);
+
+    let suggestion = `<br>Element "${name}" of type ${type} has ${incoming} incoming sequence flow(s) and ${outgoing} outgoing sequence flow(s).`;
+
+    if (suggestChanges) {
+        // Tasks
+        if (type === 'task' && incoming < 1) {
+            suggestion += `<br>❗ An incoming sequence flow should be added, since tasks should not run workflow execution.`;
+        }
+
+        if (type === 'task' && incoming > 1) {
+            suggestion += `<br>❗ Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this task.`;
+        }
+
+        if (type === 'task' && outgoing < 1) {
+            suggestion += `<br>❗ An outgoing sequence flow should be added, since tasks should not terminate workflow execution.`;
+        }
+
+        if (type === 'task' && outgoing > 1) {
+            suggestion += `<br>❗ Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this task.`;
+        }
+
+        // Start events
+        if (type === 'start' && outgoing < 1) {
+            suggestion += `<br>❗ An outgoing sequence flow should be added, otherwise the start event is useless.`;
+        }
+
+        if (type === 'start' && outgoing > 1) {
+            suggestion += `<br>❗ Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this start event.`;
+        }
+
+        // End events
+        if (type === 'end' && incoming < 1) {
+            suggestion += `<br>❗ An incoming sequence flow should be added, otherwise the end event is useless.`;
+        }
+
+        if (type === 'end' && incoming > 1) {
+            suggestion += `<br>❗ Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this end event.`;
+        }
+
+        // Intermediate events
+        if (type === 'event' && incoming < 1) {
+            suggestion += `<br>❗ An incoming sequence flow should be added, since intermediate events should not run workflow execution.`;
+        }
+
+        if (type === 'event' && incoming > 1) {
+            suggestion += `<br>❗ Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this intermediate event.`;
+        }
+
+        if (type === 'event' && outgoing < 1) {
+            suggestion += `<br>❗ An outgoing sequence flow should be added, since intermediate events should not terminate workflow execution.`;
+        }
+
+        if (type === 'event' && outgoing > 1) {
+            suggestion += `<br>❗ Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this intermediate event.`;
+        }
+
+        // Gateways
+        if (type === 'gateway' && incoming < 1) {
+            suggestion += `<br>❗ An incoming sequence flow should be added, since gateways should not run workflow execution.`;
+        }
+
+        if (type === 'gateway' && outgoing < 1) {
+            suggestion += `<br>❗ An outgoing sequence flow should be added, since gateways should not terminate workflow execution.`;
+        }
+
+        if (type === 'gateway' && (incoming > 1 && outgoing > 1)) {
+            suggestion += `<br>❗ This gateway should be replaced by two gateways: a join (to merge/synchronize the workflow at first) that triggers a split (to branch/parallelize the workflow after).`;
+        }
+
+        if (type === 'gateway' && (incoming === 1 && outgoing === 1)) {
+            suggestion += `<br>❗ The gateway should be either split or join, otherwise the gateway is useless`;
+        }
+    }
+
+    $('#tipText').append(suggestion);
 }
 
 function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
@@ -256,17 +338,13 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
 
         processName = processName === '' ? processList[k].attributes['id'].nodeValue : processName;
 
-        const tasksNumberThreshold = 8;
-
         let warnings = {
             invalidTasks: 0,
             invalidEvents: 0,
             invalidGateways: 0,
-            tasksNumber: 0,
 
             validate: function() {
-                return this.tasksNumber <= tasksNumberThreshold && this.invalidTasks === 0 && this.invalidEvents === 0 &&
-                    this.invalidGateways === 0;
+                return this.invalidTasks === 0 && this.invalidEvents === 0 && this.invalidGateways === 0;
             }
         }
 
@@ -274,6 +352,13 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
             'Process <b>"' + processName + '"</b>' + '</div>');
 
         for (let i = 0; i < process.length; i++) {
+            let elementData = {
+                name: '',
+                type: '',
+                incoming: 0,
+                outgoing: 0
+            };
+
             // [start] Tasks analysis
             if (process[i].nodeName.toLowerCase().includes('task'.toLowerCase()) ||
                 process[i].nodeName.toLowerCase().includes('subProcess'.toLowerCase())) {
@@ -295,12 +380,20 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                     }
                 }
 
+                elementData.name = name;
+                elementData.type = 'task';
+                elementData.incoming = incoming;
+                elementData.outgoing = outgoing;
+
                 if (incoming !== 1 || outgoing !== 1) {
                     warnings.invalidTasks++;
 
                     // color invalid tasks
                     colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                        'Tasks should have one incoming and one outgoing flow');
+                        'Tasks should have one incoming and one outgoing flow', elementData);
+                } else {
+                    // color correct tasks
+                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                 }
 
                 if (incoming === 0 && outgoing === 0) {
@@ -327,8 +420,6 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                             '❌ Task <b>"' + name + '"</b> has several outgoing flows (implicit exclusive/parallel choice)' + '</div>');
                     }
                 }
-
-                warnings.tasksNumber++;
             }
             // [end] Tasks analysis
 
@@ -353,12 +444,20 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                 }
 
                 if (process[i].nodeName.toLowerCase().includes('startEvent'.toLowerCase())) {
+                    elementData.name = name;
+                    elementData.type = 'start';
+                    elementData.incoming = incoming;
+                    elementData.outgoing = outgoing;
+
                     if (outgoing !== 1) {
                         warnings.invalidEvents++;
 
                         // color invalid start events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                            'Start events should have one outgoing flow');
+                            'Start events should have one outgoing flow', elementData);
+                    } else {
+                        // color correct start events
+                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                     }
 
                     if (outgoing < 1) {
@@ -371,12 +470,20 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                             '❌ Start event <b>"' + name + '"</b> has several outgoing flows (implicit exclusive/parallel choice)' + '</div>');
                     }
                 } else if (process[i].nodeName.toLowerCase().includes('endEvent'.toLowerCase())) {
+                    elementData.name = name;
+                    elementData.type = 'end';
+                    elementData.incoming = incoming;
+                    elementData.outgoing = outgoing;
+
                     if (incoming !== 1) {
                         warnings.invalidEvents++;
 
                         // color invalid end events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                            'End events should have one incoming flow');
+                            'End events should have one incoming flow', elementData);
+                    } else {
+                        // color correct end events
+                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                     }
 
                     if (incoming < 1) {
@@ -389,12 +496,20 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                             '❌ End event <b>"' + name + '"</b> has several incoming flows (implicit merge/synchronization)' + '</div>');
                     }
                 } else {
+                    elementData.name = name;
+                    elementData.type = 'event';
+                    elementData.incoming = incoming;
+                    elementData.outgoing = outgoing;
+
                     if (incoming !== 1 || outgoing !== 1) {
                         warnings.invalidEvents++;
 
                         // color invalid events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                            'Intermediate events should have one incoming and one outgoing flow');
+                            'Intermediate events should have one incoming and one outgoing flow', elementData);
+                    } else {
+                        // color correct events
+                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                     }
 
                     if (incoming === 0 && outgoing === 0) {
@@ -445,12 +560,20 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                     }
                 }
 
+                elementData.name = name;
+                elementData.type = 'gateway';
+                elementData.incoming = incoming;
+                elementData.outgoing = outgoing;
+
                 if (!((incoming === 1 && outgoing > 1) || (incoming > 1 && outgoing === 1))) {
                     warnings.invalidGateways++;
 
                     // color invalid gateways
                     colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                        'Gateways should be either splits or joins');
+                        'Gateways should be either splits or joins', elementData);
+                } else {
+                    // color correct gateways
+                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                 }
 
                 if (incoming === 0 && outgoing === 0) {
@@ -489,13 +612,8 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
             // [end] Gateways analysis
         }
 
-        if (warnings.tasksNumber > tasksNumberThreshold) {
-            $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                '❌ Process is too large: it should be decomposed or split into several processes</b></div>');
-        }
-
         if (warnings.validate()) {
-            $('#recommendations').append('<div class="btn btn-outline-info" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">' +
+            $('#recommendations').append('<div class="btn btn-outline-success" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">' +
                 '✔️ No mistakes detected</div>');
         }
     }

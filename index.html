@@ -93,14 +93,29 @@
                     <div id="extra-tip"><small>Hover highlighted elements (weak spots) to see tooltips</small></div>
                     <div id="canvas"></div>
 
-                    <div id="editor"></div>
-
                     <!-- [required hidden elements] -->
+                    <div id="editor" hidden></div>
                     <input type="hidden" class="form-control" id="bpmnPrefix" />
                     <input type="hidden" id="bpmnLink" />
                     <!-- [/required hidden elements] -->
 
                     <div id="recommendations"></div>
+
+                    <!-- Suggestion modal -->
+                    <div class="modal fade" id="suggestionModal" tabindex="-1" role="dialog" aria-labelledby="suggestionModalLabel" aria-hidden="true">
+                        <div class="modal-dialog" role="document">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h6 class="modal-title" id="suggestionModalLabel">💡 Suggestion</h6>
+                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                                        <span aria-hidden="true">&times;</span>
+                                    </button>
+                                </div>
+                                <div class="modal-body" id="tipText">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
