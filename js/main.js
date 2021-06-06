@@ -212,13 +212,13 @@ function colorNode(elementId, overlays, elementRegistry, tip, elementData, isFau
     }
 
     const symbol = isFault ? '❌' : '✔️';
-    const message = isFault ? `<small class="tiptext">${tip}</small>` : `<small class="finetext">No changes required</small>`;
+    const message = isFault ? `<span class="tiptext">${tip}</span>` : `<span class="finetext">No changes required</span>`;
 
     elementData.name = elementData.name.replace(/(?:\r\n|\r|\n)/g, ' ');
 
     overlays.add(elementId, {
         position: { top: -10, left: -10 },
-        html: $('<div class="highlight-overlay">').html(`<span style="cursor: pointer;" onclick="showSuggestionModal('${tip}', '${elementData.name}', '${elementData.type}', '${elementData.incoming}', '${elementData.outgoing}')">${symbol}</span>${message}`)
+        html: $('<div class="highlight-overlay">').html(`<span style="cursor: pointer;" onclick="showSuggestionModal('${tip}', '${elementData.name}', '${elementData.type}', ${elementData.incoming}, ${elementData.outgoing})">${symbol}</span>${message}`)
     });
 
     coloredNodes.push(elementId);
@@ -239,6 +239,9 @@ function showSuggestionModal(tip, name, type, incoming, outgoing) {
     $('#tipText').append(tip);
 
     let suggestion = `<br>Element "${name}" of type ${type} has ${incoming} incoming sequence flow(s) and ${outgoing} outgoing sequence flow(s).`;
+
+    incoming = Number.parseInt(incoming);
+    outgoing = Number.parseInt(outgoing);
 
     if (suggestChanges) {
         // Tasks
