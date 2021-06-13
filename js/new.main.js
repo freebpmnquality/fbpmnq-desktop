@@ -19,7 +19,12 @@ const loadRecentBPMNModel = function(recentModelName) {
 
         if (recentModelName === modelName) {
             lastFileName = modelName;
-            $("#file-name").text("💠 " + modelName);
+
+            if (uploadedFiles.includes(modelName)) {
+                $('#file-name').text("💠 " + modelName);
+            } else {
+                $('#file-name').html(`💠 <a href="${modelName}" target="_blank">${modelName}</a><br><a class="badge badge-pill badge-primary" href="https://cloudfreebpmnquality.herokuapp.com/finance/index.html?doc=${modelName}" target="_blank">Estimate cost</a>`);
+            }
 
             const loadedModel = recentBPMNModels[i].content;
 
@@ -80,4 +85,9 @@ document.addEventListener("eReadFile", function(e) {
     modelNamesIndex.push("restaurant.bpmn");
 
     displayRecentBPMNModels(recentBPMNModels[0].name);
+
+    uploadedFiles.push("dispatch.bpmn");
+    uploadedFiles.push("recourse.bpmn");
+    uploadedFiles.push("credit.bpmn");
+    uploadedFiles.push("restaurant.bpmn");
 }

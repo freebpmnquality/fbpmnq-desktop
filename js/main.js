@@ -106,7 +106,7 @@ function analyzeDoc_Click() {
 
     viewer.importXML(bpmnXML, function(err) {
         if (err) {
-            $('#canvas').append('<div class="btn btn-outline-danger bpmn-warning">' + err + '</div>');
+            $('#canvas').append('<div class="alert alert-danger bpmn-warning">' + err + '</div>');
         } else {
             let canvas = viewer.get('canvas');
 
@@ -153,7 +153,7 @@ function loadDocumentByLink() {
         editor.setValue('');
         editor.insert(data);
 
-        $('#file-name').html("💠 " + bpmnLink);
+        $('#file-name').html(`💠 <a href="${bpmnLink}" target="_blank">${bpmnLink}</a><br><a class="badge badge-pill badge-primary" href="https://cloudfreebpmnquality.herokuapp.com/finance/index.html?doc=${bpmnLink}" target="_blank">Estimate cost</a>`);
 
         defineXMLNamespace(data);
 
@@ -161,10 +161,6 @@ function loadDocumentByLink() {
 
         lastFileName = bpmnLink;
         document.dispatchEvent(readFileEvent);
-
-        window.onbeforeunload = function(e) {
-            return 'Are you sure you want to leave this page? The changes you made will be lost.';
-        };
     });
 }
 
@@ -194,7 +190,7 @@ function resizeCanvas(change) {
 
         viewer.importXML(bpmnXML, function(err) {
             if (err) {
-                $('#canvas').append('<div class="btn btn-outline-danger bpmn-warning">' + err + '</div>');
+                $('#canvas').append('<div class="alert alert-danger bpmn-warning">' + err + '</div>');
             } else {
                 let canvas = viewer.get('canvas');
 
@@ -212,7 +208,7 @@ function colorNode(elementId, overlays, elementRegistry, tip, elementData, isFau
     }
 
     const symbol = isFault ? '❌' : '✔️';
-    const message = isFault ? `<span class="tiptext">${tip}</span>` : `<span class="finetext">No changes required</span>`;
+    const message = isFault ? `<span class="tiptext">${tip}</span>` : `<span class="finetext">No changes required.</span>`;
 
     elementData.name = elementData.name.replace(/(?:\r\n|\r|\n)/g, ' ');
 
@@ -229,7 +225,7 @@ function showSuggestionModal(tip, name, type, incoming, outgoing) {
     let suggestChanges = false;
 
     if (tip === undefined || tip === null || tip === 'null') {
-        tip = '✔️ No changes required';
+        tip = '✔️ No changes required.';
     } else {
         tip = `❌ ${tip}`;
         suggestChanges = true;
@@ -259,6 +255,17 @@ function showSuggestionModal(tip, name, type, incoming, outgoing) {
 
         if (type === 'task' && outgoing > 1) {
             suggestion += `<br>❗ Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this task.`;
+        }
+
+        if (type === 'task') {
+            // semantic analysis
+            if (ActivitySemanticUtil.isSimple(name)) {
+                suggestion += `<br>❗ This activity seems to be too short and too broad to be useful. It may be detailed or merged with another activity.`;
+            }
+
+            if (ActivitySemanticUtil.isComplex(name)) {
+                suggestion += `<br>❗ This activity seems to be too long and too detailed. It may be broken down into its component activities.`;
+            }
         }
 
         // Start events
@@ -351,8 +358,7 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
             }
         }
 
-        $('#recommendations').append('<div class="alert alert-light" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">' +
-            'Process <b>"' + processName + '"</b>' + '</div>');
+        $('#recommendations').append(`<div class="alert alert-light" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">Process <b>"${processName}"</b>.</div>`);
 
         for (let i = 0; i < process.length; i++) {
             let elementData = {
@@ -388,39 +394,60 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                 elementData.incoming = incoming;
                 elementData.outgoing = outgoing;
 
+                let isElementCorrect = true;
+                let highlightMessage = '';
+
+                // structural analysis
                 if (incoming !== 1 || outgoing !== 1) {
                     warnings.invalidTasks++;
+                    highlightMessage += 'Tasks should have one incoming and one outgoing flow.';
+                    isElementCorrect = false;
+                }
 
-                    // color invalid tasks
-                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                        'Tasks should have one incoming and one outgoing flow', elementData);
-                } else {
-                    // color correct tasks
+                // semantic analysis
+                if (ActivitySemanticUtil.isSimple(name)) {
+                    warnings.invalidTasks++;
+
+                    highlightMessage += highlightMessage.length > 0 ? ' ' : '';
+                    highlightMessage += 'This activity seems to be too short and too broad to be useful.';
+                    isElementCorrect = false;
+
+                    $('#recommendations').append(`<div class="alert alert-warning bpmn-warning">❗ Activity <b>"${name}"</b> seems to be too short and too broad to be useful.</div>`);
+                }
+
+                if (ActivitySemanticUtil.isComplex(name)) {
+                    warnings.invalidTasks++;
+
+                    highlightMessage += highlightMessage.length > 0 ? ' ' : '';
+                    highlightMessage += 'This activity seems to be too long and too detailed.';
+                    isElementCorrect = false;
+
+                    $('#recommendations').append(`<div class="alert alert-warning bpmn-warning">❗ Activity <b>"${name}"</b> seems to be too long and too detailed.</div>`);
+                }
+
+                if (isElementCorrect) {
                     colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
+                } else {
+                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, highlightMessage, elementData);
                 }
 
                 if (incoming === 0 && outgoing === 0) {
-                    $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                        '❌ Task <b>"' + name + '"</b> does not have incoming and outgoing flows (unnecessary task)' + '</div>');
+                    $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> does not have incoming and outgoing flows (unnecessary task).</div>`);
                 } else {
                     if (incoming < 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Task <b>"' + name + '"</b> does not have incoming flows (implicit workflow start)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> does not have incoming flows (implicit workflow start).</div>`);
                     }
 
                     if (incoming > 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Task <b>"' + name + '"</b> has several incoming flows (implicit merge/synchronization)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> has several incoming flows (implicit merge/synchronization).</div>`);
                     }
 
                     if (outgoing < 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Task <b>"' + name + '"</b> does not have outgoing flows (implicit workflow end)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> does not have outgoing flows (implicit workflow end).</div>`);
                     }
 
                     if (outgoing > 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Task <b>"' + name + '"</b> has several outgoing flows (implicit exclusive/parallel choice)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> has several outgoing flows (implicit exclusive/parallel choice).</div>`);
                     }
                 }
             }
@@ -456,21 +483,18 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                         warnings.invalidEvents++;
 
                         // color invalid start events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                            'Start events should have one outgoing flow', elementData);
+                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'Start events should have one outgoing flow.', elementData);
                     } else {
                         // color correct start events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                     }
 
                     if (outgoing < 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Start event <b>"' + name + '"</b> does not have outgoing flows (unnecessary event)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Start event <b>"${name}"</b> does not have outgoing flows (unnecessary event).</div>`);
                     }
 
                     if (outgoing > 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Start event <b>"' + name + '"</b> has several outgoing flows (implicit exclusive/parallel choice)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Start event <b>"${name}"</b> has several outgoing flows (implicit exclusive/parallel choice).</div>`);
                     }
                 } else if (process[i].nodeName.toLowerCase().includes('endEvent'.toLowerCase())) {
                     elementData.name = name;
@@ -482,21 +506,18 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                         warnings.invalidEvents++;
 
                         // color invalid end events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                            'End events should have one incoming flow', elementData);
+                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'End events should have one incoming flow.', elementData);
                     } else {
                         // color correct end events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                     }
 
                     if (incoming < 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ End event <b>"' + name + '"</b> does not have incoming flows (unnecessary event)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ End event <b>"${name}"</b> does not have incoming flows (unnecessary event).</div>`);
                     }
 
                     if (incoming > 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ End event <b>"' + name + '"</b> has several incoming flows (implicit merge/synchronization)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ End event <b>"${name}"</b> has several incoming flows (implicit merge/synchronization).</div>`);
                     }
                 } else {
                     elementData.name = name;
@@ -508,35 +529,29 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                         warnings.invalidEvents++;
 
                         // color invalid events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                            'Intermediate events should have one incoming and one outgoing flow', elementData);
+                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'Intermediate events should have one incoming and one outgoing flow.', elementData);
                     } else {
                         // color correct events
                         colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                     }
 
                     if (incoming === 0 && outgoing === 0) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Intermediate event <b>"' + name + '"</b> does not have incoming and outgoing flows (unnecessary event)' + '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> does not have incoming and outgoing flows (unnecessary event).</div>`);
                     } else {
                         if (incoming < 1) {
-                            $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                                '❌ Intermediate event <b>"' + name + '"</b> does not have incoming flows (implicit workflow start)' + '</div>');
+                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> does not have incoming flows (implicit workflow start).</div>`);
                         }
 
                         if (incoming > 1) {
-                            $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                                '❌ Intermediate event <b>"' + name + '"</b> has several incoming flows (implicit merge/synchronization)' + '</div>');
+                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> has several incoming flows (implicit merge/synchronization).</div>`);
                         }
 
                         if (outgoing < 1) {
-                            $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                                '❌ Intermediate event <b>"' + name + '"</b> does not have outgoing flows (implicit workflow end)' + '</div>');
+                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> does not have outgoing flows (implicit workflow end).</div>`);
                         }
 
                         if (outgoing > 1) {
-                            $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                                '❌ Intermediate event <b>"' + name + '"</b> has several outgoing flows (implicit exclusive/parallel choice)' + '</div>');
+                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> has several outgoing flows (implicit exclusive/parallel choice).</div>`);
                         }
                     }
                 }
@@ -572,43 +587,29 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
                     warnings.invalidGateways++;
 
                     // color invalid gateways
-                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry,
-                        'Gateways should be either splits or joins', elementData);
+                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'Gateways should be either splits or joins.', elementData);
                 } else {
                     // color correct gateways
                     colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
                 }
 
                 if (incoming === 0 && outgoing === 0) {
-                    $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                        '❌ Gateway <b>"' + name + '"</b> does not have incoming and outgoing flows (unnecessary gateway)' + '</div>');
+                    $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> does not have incoming and outgoing flows (unnecessary gateway).</div>`);
                 } else {
                     if (incoming > 1 && outgoing > 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Gateway <b>"' + name +
-                            '"</b> is neither split nor join: it has several incoming and outgoing flows (merge/synchronization mixed with exclusive/parallel choice)' +
-                            '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> is neither split nor join: it has several incoming and outgoing flows (merge/synchronization mixed with exclusive/parallel choice).</div>`);
                     }
 
                     if (incoming === 1 && outgoing === 1) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Gateway <b>"' + name +
-                            '"</b> is neither split nor join: it has one incoming and one outgoing flow (redundant gateway)' +
-                            '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> is neither split nor join: it has one incoming and one outgoing flow (redundant gateway).</div>`);
                     }
 
                     if (incoming === 0) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Gateway <b>"' + name +
-                            '"</b> does not have incoming flows (implicit workflow start)' +
-                            '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> does not have incoming flows (implicit workflow start).</div>`);
                     }
 
                     if (outgoing === 0) {
-                        $('#recommendations').append('<div class="btn btn-outline-danger bpmn-warning">' +
-                            '❌ Gateway <b>"' + name +
-                            '"</b> does not have outgoing flows (implicit workflow end)' +
-                            '</div>');
+                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> does not have outgoing flows (implicit workflow end).</div>`);
                     }
                 }
             }
@@ -616,8 +617,7 @@ function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
         }
 
         if (warnings.validate()) {
-            $('#recommendations').append('<div class="btn btn-outline-success" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">' +
-                '✔️ No mistakes detected</div>');
+            $('#recommendations').append('<div class="alert alert-success" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">✔️ No mistakes detected</div>');
         }
     }
 }
@@ -638,9 +638,14 @@ function getParameterByName(name, url) {
 
 var readFileEvent = new CustomEvent("eReadFile");
 var lastFileName = null;
+var uploadedFiles = [];
 
 function readFile(file) {
     var reader = new FileReader();
+
+    if (!uploadedFiles.includes(file.name)) {
+        uploadedFiles.push(file.name);
+    }
 
     $('#file-name').text("💠 " + file.name);
 
@@ -660,10 +665,6 @@ function readFile(file) {
         analyzeDoc_Click();
 
         document.dispatchEvent(readFileEvent);
-
-        window.onbeforeunload = function(e) {
-            return 'Are you sure you want to leave this page? The changes you made will be lost.';
-        };
     };
 }
 

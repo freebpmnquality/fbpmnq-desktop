@@ -2168,8 +2168,8 @@ var samples = {
 };
 
 var sampleFileMapping = {
-    dispatch: 'Dispatch_of_Goods.bpmn',
-    recourse: 'Insurance_Recourse.bpmn',
-    credit: 'Credit_Scoring.bpmn',
-    restaurant: 'Self-service_Restaurant.bpmn'
+    dispatch: 'dispatch.bpmn',
+    recourse: 'recourse.bpmn',
+    credit: 'credit.bpmn',
+    restaurant: 'restaurant.bpmn'
 };
