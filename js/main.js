@@ -60,13 +60,8 @@ $(document).ready(function() {
         navigator.clipboard.writeText(editor.getValue()).then(clipText => {});
     });
 
-    $('#zoomin').click(function() {
-        resizeCanvas(50);
-        analyzeDoc_Click();
-    });
-
-    $('#zoomout').click(function() {
-        resizeCanvas(-50);
+    $('#slider').change(function() {
+        resizeCanvas(Number.parseInt($('#slider').val()));
         analyzeDoc_Click();
     });
 
@@ -84,7 +79,7 @@ $(document).ready(function() {
         analyzeDoc_Click();
     });
 
-    loadSample('dispatch');
+    loadSample(Object.keys(sampleFileMapping)[Object.keys(sampleFileMapping).length - 1]);
 });
 
 function analyzeDoc_Click() {
@@ -112,34 +107,25 @@ function analyzeDoc_Click() {
 
             canvas.zoom('fit-viewport');
 
-            let xmlDoc = null;
-
-            if (window.DOMParser) {
-                let parser = new DOMParser();
-                xmlDoc = parser.parseFromString(bpmnXML, 'text/xml');
-            } else {
-                xmlDoc = new ActiveXObject('Microsoft.XMLDOM');
-                xmlDoc.async = false;
-                xmlDoc.loadXML(bpmnXML);
-            }
+            // Call analytics library
+            const warningsList = QualiBPMNUtilPlainOld.analyzeBPMN(bpmnXML);
 
             $('#recommendations').empty();
 
             var overlays = viewer.get('overlays');
-            let elementRegistry = viewer.get('elementRegistry');
 
-            bpmnValidation(xmlDoc, prefix, overlays, elementRegistry);
+            bpmnValidation(warningsList, overlays);
         }
     });
 }
 
 function loadSample(sample) {
-    let data = samples[sample];
+    let data = samples(sampleFileMapping[sample]);
 
     editor.setValue('');
     editor.insert(data);
 
-    $('#file-name').html("💠 " + sampleFileMapping[sample]);
+    $('#file-name').html('<span class="badge badge-pill badge-info">Model</span> ' + sampleFileMapping[sample]);
 
     defineXMLNamespace(data);
 
@@ -153,7 +139,7 @@ function loadDocumentByLink() {
         editor.setValue('');
         editor.insert(data);
 
-        $('#file-name').html(`💠 <a href="${bpmnLink}" target="_blank">${bpmnLink}</a><br><a class="badge badge-pill badge-primary" href="https://cloudfreebpmnquality.herokuapp.com/finance/index.html?doc=${bpmnLink}" target="_blank">Estimate cost</a>`);
+        $('#file-name').html(`<span class="badge badge-pill badge-info">Model</span> <a href="${bpmnLink}" target="_blank">${bpmnLink}</a><br><a role="button" class="btn btn-sm btn-primary mt-2" style="border-radius: 1rem; font-weight: bold;" href="https://cloudfreebpmnquality.herokuapp.com/finance/index.html?doc=${bpmnLink}" target="_blank">Estimate cost</a>`);
 
         defineXMLNamespace(data);
 
@@ -180,37 +166,33 @@ function defineXMLNamespace(bpmnXML) {
     }
 }
 
-function resizeCanvas(change) {
-    let height = parseInt($('#canvas').height());
+function resizeCanvas(height) {
+    $('#canvas').height(height);
 
-    if (height > 400 || (height >= 400 && change > 0)) {
-        $('#canvas').height(height + change);
+    let bpmnXML = editor.getValue();
 
-        let bpmnXML = editor.getValue();
+    viewer.importXML(bpmnXML, function(err) {
+        if (err) {
+            $('#canvas').append('<div class="alert alert-danger bpmn-warning">' + err + '</div>');
+        } else {
+            let canvas = viewer.get('canvas');
 
-        viewer.importXML(bpmnXML, function(err) {
-            if (err) {
-                $('#canvas').append('<div class="alert alert-danger bpmn-warning">' + err + '</div>');
-            } else {
-                let canvas = viewer.get('canvas');
-
-                canvas.zoom('fit-viewport');
-            }
-        });
-    }
+            canvas.zoom('fit-viewport');
+        }
+    });
 }
 
 var coloredNodes = [];
 
-function colorNode(elementId, overlays, elementRegistry, tip, elementData, isFault = true) {
+function colorNode(elementId, overlays, tip, elementData, isFault = true) {
     if (coloredNodes.includes(elementId)) {
         return;
     }
 
-    const symbol = isFault ? '❌' : '✔️';
-    const message = isFault ? `<span class="tiptext">${tip}</span>` : `<span class="finetext">No changes required.</span>`;
-
-    elementData.name = elementData.name.replace(/(?:\r\n|\r|\n)/g, ' ');
+    const symbol = isFault ? `<span class="badge badge-pill badge-danger">Fault</span>` :
+        `<span class="badge badge-pill badge-success">Ok</span>`;
+    const message = isFault ? `<span class="tiptext">${tip}</span>` :
+        `<span class="finetext">No changes required.</span>`;
 
     overlays.add(elementId, {
         position: { top: -10, left: -10 },
@@ -222,403 +204,175 @@ function colorNode(elementId, overlays, elementRegistry, tip, elementData, isFau
 
 function showSuggestionModal(tip, name, type, incoming, outgoing) {
     $('#suggestionModal').modal('show');
-    let suggestChanges = false;
-
-    if (tip === undefined || tip === null || tip === 'null') {
-        tip = '✔️ No changes required.';
-    } else {
-        tip = `❌ ${tip}`;
-        suggestChanges = true;
-    }
 
     $('#tipText').empty();
     $('#tipText').append(tip);
 
-    let suggestion = `<br>Element "${name}" of type ${type} has ${incoming} incoming sequence flow(s) and ${outgoing} outgoing sequence flow(s).`;
+    let suggestion = `<br>Element <b>"${name}"</b> of type <b>${type}</b> has <b>${incoming}</b> incoming sequence flow(s) and <b>${outgoing}</b> outgoing sequence flow(s).`;
 
     incoming = Number.parseInt(incoming);
     outgoing = Number.parseInt(outgoing);
 
-    if (suggestChanges) {
-        // Tasks
-        if (type === 'task' && incoming < 1) {
-            suggestion += `<br>❗ An incoming sequence flow should be added, since tasks should not run workflow execution.`;
+    // Tasks
+    if (type === 'task' && incoming < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An incoming sequence flow should be added, since tasks should not run workflow execution.`;
+    }
+
+    if (type === 'task' && incoming > 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this task.`;
+    }
+
+    if (type === 'task' && outgoing < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An outgoing sequence flow should be added, since tasks should not terminate workflow execution.`;
+    }
+
+    if (type === 'task' && outgoing > 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this task.`;
+    }
+
+    if (type === 'task') {
+        // semantic analysis
+        if (QualiBPMNSemanticUtil.isSimple(name)) {
+            suggestion += `<br><span class="badge badge-pill badge-danger">!</span> This activity seems to be too short and too broad to be useful. It may be detailed or merged with another activity.`;
         }
 
-        if (type === 'task' && incoming > 1) {
-            suggestion += `<br>❗ Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this task.`;
+        if (QualiBPMNSemanticUtil.isComplex(name)) {
+            suggestion += `<br><span class="badge badge-pill badge-danger">!</span> This activity seems to be too long and too detailed. It may be broken down into its component activities.`;
         }
+    }
 
-        if (type === 'task' && outgoing < 1) {
-            suggestion += `<br>❗ An outgoing sequence flow should be added, since tasks should not terminate workflow execution.`;
-        }
+    // Start events
+    if (type === 'start' && outgoing < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An outgoing sequence flow should be added, otherwise the start event is useless.`;
+    }
 
-        if (type === 'task' && outgoing > 1) {
-            suggestion += `<br>❗ Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this task.`;
-        }
+    if (type === 'start' && outgoing > 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this start event.`;
+    }
 
-        if (type === 'task') {
-            // semantic analysis
-            if (ActivitySemanticUtil.isSimple(name)) {
-                suggestion += `<br>❗ This activity seems to be too short and too broad to be useful. It may be detailed or merged with another activity.`;
-            }
+    // End events
+    if (type === 'end' && incoming < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An incoming sequence flow should be added, otherwise the end event is useless.`;
+    }
 
-            if (ActivitySemanticUtil.isComplex(name)) {
-                suggestion += `<br>❗ This activity seems to be too long and too detailed. It may be broken down into its component activities.`;
-            }
-        }
+    if (type === 'end' && incoming > 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this end event.`;
+    }
 
-        // Start events
-        if (type === 'start' && outgoing < 1) {
-            suggestion += `<br>❗ An outgoing sequence flow should be added, otherwise the start event is useless.`;
-        }
+    // Intermediate events
+    if (type === 'event' && incoming < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An incoming sequence flow should be added, since intermediate events should not run workflow execution.`;
+    }
 
-        if (type === 'start' && outgoing > 1) {
-            suggestion += `<br>❗ Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this start event.`;
-        }
+    if (type === 'event' && incoming > 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this intermediate event.`;
+    }
 
-        // End events
-        if (type === 'end' && incoming < 1) {
-            suggestion += `<br>❗ An incoming sequence flow should be added, otherwise the end event is useless.`;
-        }
+    if (type === 'event' && outgoing < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An outgoing sequence flow should be added, since intermediate events should not terminate workflow execution.`;
+    }
 
-        if (type === 'end' && incoming > 1) {
-            suggestion += `<br>❗ Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this end event.`;
-        }
+    if (type === 'event' && outgoing > 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this intermediate event.`;
+    }
 
-        // Intermediate events
-        if (type === 'event' && incoming < 1) {
-            suggestion += `<br>❗ An incoming sequence flow should be added, since intermediate events should not run workflow execution.`;
-        }
+    // Gateways
+    if (type === 'gateway' && incoming < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An incoming sequence flow should be added, since gateways should not run workflow execution.`;
+    }
 
-        if (type === 'event' && incoming > 1) {
-            suggestion += `<br>❗ Multiple incoming sequence flows should be merged/synchronized using a join gateway that triggers this intermediate event.`;
-        }
+    if (type === 'gateway' && outgoing < 1) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> An outgoing sequence flow should be added, since gateways should not terminate workflow execution.`;
+    }
 
-        if (type === 'event' && outgoing < 1) {
-            suggestion += `<br>❗ An outgoing sequence flow should be added, since intermediate events should not terminate workflow execution.`;
-        }
+    if (type === 'gateway' && (incoming > 1 && outgoing > 1)) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> This gateway should be replaced by two gateways: a join (to merge/synchronize the workflow at first) that triggers a split (to branch/parallelize the workflow after).`;
+    }
 
-        if (type === 'event' && outgoing > 1) {
-            suggestion += `<br>❗ Multiple outgoing sequence flows should be branched/parallelized using a split gateway triggered by this intermediate event.`;
-        }
-
-        // Gateways
-        if (type === 'gateway' && incoming < 1) {
-            suggestion += `<br>❗ An incoming sequence flow should be added, since gateways should not run workflow execution.`;
-        }
-
-        if (type === 'gateway' && outgoing < 1) {
-            suggestion += `<br>❗ An outgoing sequence flow should be added, since gateways should not terminate workflow execution.`;
-        }
-
-        if (type === 'gateway' && (incoming > 1 && outgoing > 1)) {
-            suggestion += `<br>❗ This gateway should be replaced by two gateways: a join (to merge/synchronize the workflow at first) that triggers a split (to branch/parallelize the workflow after).`;
-        }
-
-        if (type === 'gateway' && (incoming === 1 && outgoing === 1)) {
-            suggestion += `<br>❗ The gateway should be either split or join, otherwise the gateway is useless`;
-        }
+    if (type === 'gateway' && (incoming === 1 && outgoing === 1)) {
+        suggestion += `<br><span class="badge badge-pill badge-danger">!</span> The gateway should be either split or join, otherwise the gateway is useless.`;
     }
 
     $('#tipText').append(suggestion);
 }
 
-function bpmnValidation(xmlDoc, prefix, overlays, elementRegistry) {
+function bpmnValidation(warningsList, overlays) {
     coloredNodes = [];
-    let processList = xmlDoc.getElementsByTagName(prefix + 'process');
 
-    for (let k = 0; k < processList.length; k++) {
-        let process = processList[k].childNodes;
+    $('#syntacticQuality').empty();
+    $('#semanticQuality').empty();
 
-        let processName = processList[k].attributes['name'] === undefined ?
-            processList[k].attributes['id'].nodeValue :
-            processList[k].attributes['name'].nodeValue;
+    let countErrors = 0;
 
-        let participants = xmlDoc.getElementsByTagName(prefix + 'participant');
+    let totalSyntacticValidity = 0;
+    let totalSemanticValidity = 0;
 
-        for (let p = 0; p < participants.length; p++) {
-            if (participants[p].attributes['processRef'] !== undefined &&
-                participants[p].attributes['name'] !== undefined &&
-                participants[p].attributes['processRef'].nodeValue === processList[k].attributes['id'].nodeValue) {
-                processName = participants[p].attributes['name'].nodeValue;
-                break;
+    for (const warningsObj in warningsList) {
+        const warnings = warningsList[warningsObj].data;
+        const processName = warningsList[warningsObj].process;
+        const k = warningsList[warningsObj].id;
+
+        for (const element in warnings.elementData) {
+            colorNode(warnings.elementData[element].id, overlays, warnings.elementData[element].message, warnings.elementData[element], !warnings.elementData[element].isCorrect);
+
+            if (!warnings.elementData[element].isCorrect) {
+                $('#recommendations').append(`<div class="list-group-item list-group-item-action mt-2" style="border-radius: 1rem;"><span class="badge badge-pill badge-danger">${warnings.elementData[element].type}</span> <b>"${warnings.elementData[element].name}"</b>: ${warnings.elementData[element].message}</div>`);
+
+                countErrors++;
             }
         }
 
-        processName = processName === '' ? processList[k].attributes['id'].nodeValue : processName;
+        $('#syntacticQuality').append(`<div class="list-group-item list-group-item-action mt-2" style="border-radius: 1rem;">
+            <span class="badge badge-pill badge-info">Process</span>
+            <span style="font-weight: bold;">${processName}</span><br>
+            <div class="mt-1">
+                <span id="syntacticQualityValue-${k}" class="badge badge-pill badge-light">0.00</span>
+                <span id="syntacticQualityBadge-${k}" class="badge badge-pill badge-light">N/A</span>
+            </div>
+        </div>`);
 
-        let warnings = {
-            invalidTasks: 0,
-            invalidEvents: 0,
-            invalidGateways: 0,
+        $('#semanticQuality').append(`<div class="list-group-item list-group-item-action mt-2" style="border-radius: 1rem;">
+            <span class="badge badge-pill badge-info">Process</span>
+            <span style="font-weight: bold;">${processName}</span><br>
+            <div class="mt-1">
+                <span id="semanticQualityValue-${k}" class="badge badge-pill badge-light">0.00</span>
+                <span id="semanticQualityBadge-${k}" class="badge badge-pill badge-light">N/A</span>
+            </div>
+        </div>`);
 
-            validate: function() {
-                return this.invalidTasks === 0 && this.invalidEvents === 0 && this.invalidGateways === 0;
-            }
-        }
+        const syntacticValidity = warnings.syntacticValidity();
+        const semanticValidity = warnings.semanticValidity();
 
-        $('#recommendations').append(`<div class="alert alert-light" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">Process <b>"${processName}"</b>.</div>`);
+        totalSyntacticValidity += syntacticValidity;
+        totalSemanticValidity += semanticValidity;
 
-        for (let i = 0; i < process.length; i++) {
-            let elementData = {
-                name: '',
-                type: '',
-                incoming: 0,
-                outgoing: 0
-            };
+        $(`#syntacticQualityValue-${k}`).text((100 * syntacticValidity).toFixed(2) + '%');
+        $(`#semanticQualityValue-${k}`).text((100 * semanticValidity).toFixed(2) + '%');
 
-            // [start] Tasks analysis
-            if (process[i].nodeName.toLowerCase().includes('task'.toLowerCase()) ||
-                process[i].nodeName.toLowerCase().includes('subProcess'.toLowerCase())) {
-                let name = process[i].attributes['name'] === undefined ?
-                    process[i].attributes['id'].nodeValue :
-                    process[i].attributes['name'].nodeValue;
-                name = name === '' ? process[i].attributes['id'].nodeValue : name;
+        const syntacticTerm = warnings.getLinquisticValue(syntacticValidity);
+        const semanticTerm = warnings.getLinquisticValue(semanticValidity);
 
-                let incoming = 0;
-                let outgoing = 0;
+        const colors = {
+            'high': 'success',
+            'medium': 'warning',
+            'low': 'danger'
+        };
 
-                for (let j = 0; j < process[i].childNodes.length; j++) {
-                    if (process[i].childNodes[j].nodeName.toLowerCase().includes('incoming'.toLowerCase())) {
-                        incoming++;
-                    }
+        $(`#syntacticQualityBadge-${k}`).attr('class', `badge badge-pill badge-${colors[syntacticTerm]}`);
+        $(`#semanticQualityBadge-${k}`).attr('class', `badge badge-pill badge-${colors[semanticTerm]}`);
 
-                    if (process[i].childNodes[j].nodeName.toLowerCase().includes('outgoing'.toLowerCase())) {
-                        outgoing++;
-                    }
-                }
+        $(`#syntacticQualityBadge-${k}`).text(syntacticTerm);
+        $(`#semanticQualityBadge-${k}`).text(semanticTerm);
+    }
 
-                elementData.name = name;
-                elementData.type = 'task';
-                elementData.incoming = incoming;
-                elementData.outgoing = outgoing;
+    totalSyntacticValidity /= warningsList.length;
+    totalSemanticValidity /= warningsList.length;
 
-                let isElementCorrect = true;
-                let highlightMessage = '';
+    $('#totalSyntacticQuality').text((100 * totalSyntacticValidity).toFixed(2) + '%');
+    $('#totalSemanticQuality').text((100 * totalSemanticValidity).toFixed(2) + '%');
 
-                // structural analysis
-                if (incoming !== 1 || outgoing !== 1) {
-                    warnings.invalidTasks++;
-                    highlightMessage += 'Tasks should have one incoming and one outgoing flow.';
-                    isElementCorrect = false;
-                }
-
-                // semantic analysis
-                if (ActivitySemanticUtil.isSimple(name)) {
-                    warnings.invalidTasks++;
-
-                    highlightMessage += highlightMessage.length > 0 ? ' ' : '';
-                    highlightMessage += 'This activity seems to be too short and too broad to be useful.';
-                    isElementCorrect = false;
-
-                    $('#recommendations').append(`<div class="alert alert-warning bpmn-warning">❗ Activity <b>"${name}"</b> seems to be too short and too broad to be useful.</div>`);
-                }
-
-                if (ActivitySemanticUtil.isComplex(name)) {
-                    warnings.invalidTasks++;
-
-                    highlightMessage += highlightMessage.length > 0 ? ' ' : '';
-                    highlightMessage += 'This activity seems to be too long and too detailed.';
-                    isElementCorrect = false;
-
-                    $('#recommendations').append(`<div class="alert alert-warning bpmn-warning">❗ Activity <b>"${name}"</b> seems to be too long and too detailed.</div>`);
-                }
-
-                if (isElementCorrect) {
-                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
-                } else {
-                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, highlightMessage, elementData);
-                }
-
-                if (incoming === 0 && outgoing === 0) {
-                    $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> does not have incoming and outgoing flows (unnecessary task).</div>`);
-                } else {
-                    if (incoming < 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> does not have incoming flows (implicit workflow start).</div>`);
-                    }
-
-                    if (incoming > 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> has several incoming flows (implicit merge/synchronization).</div>`);
-                    }
-
-                    if (outgoing < 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> does not have outgoing flows (implicit workflow end).</div>`);
-                    }
-
-                    if (outgoing > 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Task <b>"${name}"</b> has several outgoing flows (implicit exclusive/parallel choice).</div>`);
-                    }
-                }
-            }
-            // [end] Tasks analysis
-
-            // [start] Events analysis
-            if (process[i].nodeName.includes('Event')) {
-                let name = process[i].attributes['name'] === undefined ?
-                    process[i].attributes['id'].nodeValue :
-                    process[i].attributes['name'].nodeValue;
-                name = name === '' ? process[i].attributes['id'].nodeValue : name;
-
-                let incoming = 0;
-                let outgoing = 0;
-
-                for (let j = 0; j < process[i].childNodes.length; j++) {
-                    if (process[i].childNodes[j].nodeName.toLowerCase().includes('incoming'.toLowerCase())) {
-                        incoming++;
-                    }
-
-                    if (process[i].childNodes[j].nodeName.toLowerCase().includes('outgoing'.toLowerCase())) {
-                        outgoing++;
-                    }
-                }
-
-                if (process[i].nodeName.toLowerCase().includes('startEvent'.toLowerCase())) {
-                    elementData.name = name;
-                    elementData.type = 'start';
-                    elementData.incoming = incoming;
-                    elementData.outgoing = outgoing;
-
-                    if (outgoing !== 1) {
-                        warnings.invalidEvents++;
-
-                        // color invalid start events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'Start events should have one outgoing flow.', elementData);
-                    } else {
-                        // color correct start events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
-                    }
-
-                    if (outgoing < 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Start event <b>"${name}"</b> does not have outgoing flows (unnecessary event).</div>`);
-                    }
-
-                    if (outgoing > 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Start event <b>"${name}"</b> has several outgoing flows (implicit exclusive/parallel choice).</div>`);
-                    }
-                } else if (process[i].nodeName.toLowerCase().includes('endEvent'.toLowerCase())) {
-                    elementData.name = name;
-                    elementData.type = 'end';
-                    elementData.incoming = incoming;
-                    elementData.outgoing = outgoing;
-
-                    if (incoming !== 1) {
-                        warnings.invalidEvents++;
-
-                        // color invalid end events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'End events should have one incoming flow.', elementData);
-                    } else {
-                        // color correct end events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
-                    }
-
-                    if (incoming < 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ End event <b>"${name}"</b> does not have incoming flows (unnecessary event).</div>`);
-                    }
-
-                    if (incoming > 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ End event <b>"${name}"</b> has several incoming flows (implicit merge/synchronization).</div>`);
-                    }
-                } else {
-                    elementData.name = name;
-                    elementData.type = 'event';
-                    elementData.incoming = incoming;
-                    elementData.outgoing = outgoing;
-
-                    if (incoming !== 1 || outgoing !== 1) {
-                        warnings.invalidEvents++;
-
-                        // color invalid events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'Intermediate events should have one incoming and one outgoing flow.', elementData);
-                    } else {
-                        // color correct events
-                        colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
-                    }
-
-                    if (incoming === 0 && outgoing === 0) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> does not have incoming and outgoing flows (unnecessary event).</div>`);
-                    } else {
-                        if (incoming < 1) {
-                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> does not have incoming flows (implicit workflow start).</div>`);
-                        }
-
-                        if (incoming > 1) {
-                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> has several incoming flows (implicit merge/synchronization).</div>`);
-                        }
-
-                        if (outgoing < 1) {
-                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> does not have outgoing flows (implicit workflow end).</div>`);
-                        }
-
-                        if (outgoing > 1) {
-                            $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Intermediate event <b>"${name}"</b> has several outgoing flows (implicit exclusive/parallel choice).</div>`);
-                        }
-                    }
-                }
-            }
-            // [end] Events analysis
-
-            // [start] Gateways analysis
-            if (process[i].nodeName.toLowerCase().includes('gateway'.toLowerCase())) {
-                let name = process[i].attributes['name'] === undefined ?
-                    process[i].attributes['id'].nodeValue :
-                    process[i].attributes['name'].nodeValue;
-                name = name === '' ? process[i].attributes['id'].nodeValue : name;
-
-                let incoming = 0;
-                let outgoing = 0;
-
-                for (let j = 0; j < process[i].childNodes.length; j++) {
-                    if (process[i].childNodes[j].nodeName.toLowerCase().includes('incoming'.toLowerCase())) {
-                        incoming++;
-                    }
-
-                    if (process[i].childNodes[j].nodeName.toLowerCase().includes('outgoing'.toLowerCase())) {
-                        outgoing++;
-                    }
-                }
-
-                elementData.name = name;
-                elementData.type = 'gateway';
-                elementData.incoming = incoming;
-                elementData.outgoing = outgoing;
-
-                if (!((incoming === 1 && outgoing > 1) || (incoming > 1 && outgoing === 1))) {
-                    warnings.invalidGateways++;
-
-                    // color invalid gateways
-                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, 'Gateways should be either splits or joins.', elementData);
-                } else {
-                    // color correct gateways
-                    colorNode(process[i].attributes['id'].nodeValue, overlays, elementRegistry, null, elementData, false);
-                }
-
-                if (incoming === 0 && outgoing === 0) {
-                    $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> does not have incoming and outgoing flows (unnecessary gateway).</div>`);
-                } else {
-                    if (incoming > 1 && outgoing > 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> is neither split nor join: it has several incoming and outgoing flows (merge/synchronization mixed with exclusive/parallel choice).</div>`);
-                    }
-
-                    if (incoming === 1 && outgoing === 1) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> is neither split nor join: it has one incoming and one outgoing flow (redundant gateway).</div>`);
-                    }
-
-                    if (incoming === 0) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> does not have incoming flows (implicit workflow start).</div>`);
-                    }
-
-                    if (outgoing === 0) {
-                        $('#recommendations').append(`<div class="alert alert-danger bpmn-warning">❌ Gateway <b>"${name}"</b> does not have outgoing flows (implicit workflow end).</div>`);
-                    }
-                }
-            }
-            // [end] Gateways analysis
-        }
-
-        if (warnings.validate()) {
-            $('#recommendations').append('<div class="alert alert-success" style="padding: 5px; margin-bottom: 5px; font-size: 14px; width: 100%; text-align: left;">✔️ No mistakes detected</div>');
-        }
+    if (countErrors < 1) {
+        $('#recommendations').append('<div class="list-group-item list-group-item-action mt-2" style="border-radius: 1rem;"><span class="badge badge-pill badge-success">Ok</span> No mistakes detected</div>');
     }
 }
 
@@ -647,7 +401,7 @@ function readFile(file) {
         uploadedFiles.push(file.name);
     }
 
-    $('#file-name').text("💠 " + file.name);
+    $('#file-name').html('<span class="badge badge-pill badge-info">Model</span> ' + file.name);
 
     reader.readAsText(file);
 

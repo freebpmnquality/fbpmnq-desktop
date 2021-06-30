@@ -30,7 +30,7 @@
 
 <body id="home">
     <nav class="navbar sticky-top navbar-expand-lg navbar-light bg-light">
-        <a class="navbar-brand" href="javascript:void(0);">QualiBPMN</a>
+        <a class="navbar-brand" href="javascript:void(0);" style="font-weight: bold;">QualiBPMN</a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
         </button>
@@ -51,67 +51,91 @@
             </ul>
         </div>
     </nav>
+    <nav class="navbar fixed-bottom navbar-light bg-light">
+        <span class="text-muted" style="font-weight: bold;">QualiBPMN by <a href="https://freebpmnquality.github.io/" target="_blank">freebpmnquality</a>, <script>document.write(new Date().getFullYear());</script> <a href="https://creativecommons.org/licenses/by-nd/4.0/" target="_blank">CC BY-ND</a></span>
+    </nav>
 
     <div id="title" class="text-center">
-        <h1>QualiBPMN — Free Online BPMN Quality Analysis Tool</h1>
-        <p>Free online tool for BPMN models quality analysis checks conformance of BPMN 2.0 diagrams to business process modeling rules.</p>
+        <h1 class="ml-4 mr-4">QualiBPMN — Free Online BPMN Quality Analysis Tool</h1>
+        <p style="font-weight: bold;" class="ml-4 mr-4">Free online tool for BPMN models quality analysis checks conformance of BPMN 2.0 diagrams to business process modeling rules.</p>
     </div>
 
-    <div class="container" id="demo">
+    <div class="ml-4 mr-4">
         <div class="row">
-            <div class="col-sm-4">
+            <div class="col-sm-4 mb-4">
                 <div id="workzone">
-                    <div class="card btn btn-primary" id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" onclick="selectFile();" onmouseover="dropMouseOver(event);" onmouseleave="dropMouseLeave(event);" ondragleave="dragOverLeave(event);">
+                    <div class="card btn btn-primary" id="drop_zone" ondrop="dropHandler(event);" ondragover="dragOverHandler(event);" onclick="selectFile();" onmouseover="dropMouseOver(event);" onmouseleave="dropMouseLeave(event);" ondragleave="dragOverLeave(event);" style="border-radius: 1rem;">
                         <div class="card-body">
-                            <p class="text-center text-muted" id="dragFileName">Drag & drop or click to upload the BPMN 2.0 file</p>
+                            <p class="text-center text-muted" id="dragFileName" style="font-weight: bold;">Drag & drop or click to upload the BPMN 2.0 file</p>
                         </div>
                     </div>
-                    <div id="samplesTip">
-                        <small>or try to use already uploaded BPMN models from Camunda <a href="https://github.com/camunda/bpmn-for-research" target="_blank">repository</a></small> 👇
+                    <div class="card mt-4" style="border-radius: 1rem;">
+                        <div class="card-body">
+                            <h5 style="font-weight: bold;">Recent models</h5>
+                            <div id="recent-models" class="list-group"></div>
+                        </div>
                     </div>
-                    <div id="recent-header">
-                        Recently uploaded BPMN models
-                    </div>
-                    <div id="recent-models" class="list-group"></div>
                 </div>
             </div>
             <div class="col-sm-8">
-                <div>
-                    <div id="file-name"></div>
-                    <div class="btn-group" id="zoombuttons">
-                        <button type="button" class="btn btn-default btn-sm" id="zoomin"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-zoom-in" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/>
-                        <path d="M10.344 11.742c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1 6.538 6.538 0 0 1-1.398 1.4z"/>
-                        <path fill-rule="evenodd" d="M6.5 3a.5.5 0 0 1 .5.5V6h2.5a.5.5 0 0 1 0 1H7v2.5a.5.5 0 0 1-1 0V7H3.5a.5.5 0 0 1 0-1H6V3.5a.5.5 0 0 1 .5-.5z"/>
-                      </svg></button>
-                        <button type="button" class="btn btn-default btn-sm" id="zoomout"><svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-zoom-out" viewBox="0 0 16 16">
-                        <path fill-rule="evenodd" d="M6.5 12a5.5 5.5 0 1 0 0-11 5.5 5.5 0 0 0 0 11zM13 6.5a6.5 6.5 0 1 1-13 0 6.5 6.5 0 0 1 13 0z"/>
-                        <path d="M10.344 11.742c.03.04.062.078.098.115l3.85 3.85a1 1 0 0 0 1.415-1.414l-3.85-3.85a1.007 1.007 0 0 0-.115-.1 6.538 6.538 0 0 1-1.398 1.4z"/>
-                        <path fill-rule="evenodd" d="M3 6.5a.5.5 0 0 1 .5-.5h6a.5.5 0 0 1 0 1h-6a.5.5 0 0 1-.5-.5z"/>
-                      </svg></button>
+                <div class="card" style="border-radius: 1rem;">
+                    <div class="card-body">
+                        <div id="file-name" style="font-weight: bold;"></div>
+
+                        <div class="btn-group mt-3 mb-3">
+                            <input type="range" min="400" max="1200" value="400" step="200" id="slider">
+                        </div>
+
+                        <div id="canvas"></div>
+
+                        <!-- [required hidden elements] -->
+                        <div id="editor" hidden></div>
+                        <input type="hidden" class="form-control" id="bpmnPrefix" />
+                        <input type="hidden" id="bpmnLink" />
+                        <!-- [/required hidden elements] -->
                     </div>
-                    <div id="extra-tip"><small>Hover highlighted elements (weak spots) to see tooltips</small></div>
-                    <div id="canvas"></div>
+                </div>
 
-                    <!-- [required hidden elements] -->
-                    <div id="editor" hidden></div>
-                    <input type="hidden" class="form-control" id="bpmnPrefix" />
-                    <input type="hidden" id="bpmnLink" />
-                    <!-- [/required hidden elements] -->
+                <div class="row row-cols-1 row-cols-md-2">
+                    <div class="col">
+                        <div class="card mt-4" style="border-radius: 1rem;">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-weight: bold;">Syntactic quality</h5>
+                                <h6 class="card-title" style="font-weight: bold;" id="totalSyntacticQuality">0%</h6>
+                                <p class="card-text" id="syntacticQuality">
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col">
+                        <div class="card mt-4" style="border-radius: 1rem;">
+                            <div class="card-body">
+                                <h5 class="card-title" style="font-weight: bold;">Semantic quality</h5>
+                                <h6 class="card-title" style="font-weight: bold;" id="totalSemanticQuality">0%</h6>
+                                <p class="card-text" id="semanticQuality">
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                    <div id="recommendations"></div>
+                <div class="card mt-4" style="border-radius: 1rem;">
+                    <div class="card-body">
+                        <h5 style="font-weight: bold;">Recommendations</h5>
+                        <div id="recommendations"></div>
 
-                    <!-- Suggestion modal -->
-                    <div class="modal fade" id="suggestionModal" tabindex="-1" role="dialog" aria-labelledby="suggestionModalLabel" aria-hidden="true">
-                        <div class="modal-dialog" role="document">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h6 class="modal-title" id="suggestionModalLabel">💡 Suggestion</h6>
-                                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                        <!-- Suggestion modal -->
+                        <div class="modal fade" id="suggestionModal" tabindex="-1" role="dialog" aria-labelledby="suggestionModalLabel" aria-hidden="true">
+                            <div class="modal-dialog" role="document">
+                                <div class="modal-content" style="border-radius: 1rem;">
+                                    <div class="modal-header">
+                                        <h6 class="modal-title" id="suggestionModalLabel"><span class="badge badge-pill badge-info">i</span> Suggestion</h6>
+                                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                                         <span aria-hidden="true">&times;</span>
                                     </button>
-                                </div>
-                                <div class="modal-body" id="tipText">
+                                    </div>
+                                    <div class="modal-body" id="tipText">
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -120,21 +144,9 @@
             </div>
         </div>
     </div>
-
-    <div class="jumbotron text-muted" id="footer">
-        <br>
-        <a href="index.html" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true">HOME</a>
-        <a href="https://cloudfreebpmnquality.herokuapp.com/storage/" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true" target="_blank">STORAGE</a>
-        <a href="https://freebpmnquality.github.io/" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true" target="_blank">WEBSITE</a>
-        <a href="https://github.com/freebpmnquality" class="btn btn-link" tabindex="-1" role="button" aria-disabled="true" target="_blank">GITHUB</a>
-        <br>
-        <br>
-        <b>QualiBPMN</b> — Free Online BPMN Quality Analysis Tool,
-        <script>
-            var CurrentYear = new Date().getFullYear()
-            document.write(CurrentYear)
-        </script> <a href="https://creativecommons.org/licenses/by-nd/4.0/" target="_blank">(CC BY-ND)</a>
-    </div>
+    <br>
+    <br>
+    <br>
 
     <script src="js/jquery-3.4.1.min.js"></script>
     <script src="js/bootstrap.min.js"></script>
@@ -142,9 +154,12 @@
     <script src="js/bpmn-viewer.development.js"></script>
     <script src="js/ace/ace.js"></script>
     <script src="js/crypto-js.min.js"></script>
+
     <script src="js/bpmn-samples.js"></script>
 
-    <script src="js/ActivitySemanticUtil.js"></script>
+    <script src="lib/qualibpmn.semantic.js"></script>
+    <script src="lib/qualibpmn.plain-old.js"></script>
+
     <script src="js/main.js"></script>
     <script src="js/new.main.js"></script>
 </body>

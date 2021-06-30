@@ -4,12 +4,12 @@ var modelNamesIndex = [];
 const displayRecentBPMNModels = function(activeModelName) {
     $("#recent-models").empty();
 
-    for (let i = 0; i < recentBPMNModels.length; i++) {
+    for (let i = recentBPMNModels.length - 1; i >= 0; i--) {
         const modelName = recentBPMNModels[i].name;
         const isActive = (activeModelName === modelName) ? "active" : "";
 
         $("#recent-models").append(`
-            <a href="javascript:void(0);" class="list-group-item list-group-item-action ${isActive} recent-item" data-toggle="list" onclick="loadRecentBPMNModel('${modelName}');">💠 <small>${modelName}</small></a>`);
+            <a href="javascript:void(0);" class="list-group-item list-group-item-action ${isActive} recent-item mt-1" data-toggle="list" style="border-radius: 1rem;" onclick="loadRecentBPMNModel('${modelName}');"><span class="badge badge-pill badge-info">Model</span> <small>${modelName}</small></a>`);
     }
 };
 
@@ -21,9 +21,9 @@ const loadRecentBPMNModel = function(recentModelName) {
             lastFileName = modelName;
 
             if (uploadedFiles.includes(modelName)) {
-                $('#file-name').text("💠 " + modelName);
+                $('#file-name').html('<span class="badge badge-pill badge-info">Model</span> ' + modelName);
             } else {
-                $('#file-name').html(`💠 <a href="${modelName}" target="_blank">${modelName}</a><br><a class="badge badge-pill badge-primary" href="https://cloudfreebpmnquality.herokuapp.com/finance/index.html?doc=${modelName}" target="_blank">Estimate cost</a>`);
+                $('#file-name').html(`<span class="badge badge-pill badge-info">Model</span> <a href="${modelName}" target="_blank">${modelName}</a><br><a role="button" class="btn btn-sm btn-primary mt-2" style="border-radius: 1rem; font-weight: bold;" href="https://cloudfreebpmnquality.herokuapp.com/finance/index.html?doc=${modelName}" target="_blank">Estimate cost</a>`);
             }
 
             const loadedModel = recentBPMNModels[i].content;
@@ -62,32 +62,15 @@ document.addEventListener("eReadFile", function(e) {
 });
 
 {
-    recentBPMNModels.push({
-        "name": "dispatch.bpmn",
-        "content": samples["dispatch"]
-    });
-    recentBPMNModels.push({
-        "name": "recourse.bpmn",
-        "content": samples["recourse"]
-    });
-    recentBPMNModels.push({
-        "name": "credit.bpmn",
-        "content": samples["credit"]
-    });
-    recentBPMNModels.push({
-        "name": "restaurant.bpmn",
-        "content": samples["restaurant"]
-    });
+    for (const sample in sampleFileMapping) {
+        recentBPMNModels.push({
+            "name": sampleFileMapping[sample],
+            "content": samples(sampleFileMapping[sample])
+        });
 
-    modelNamesIndex.push("dispatch.bpmn");
-    modelNamesIndex.push("recourse.bpmn");
-    modelNamesIndex.push("credit.bpmn");
-    modelNamesIndex.push("restaurant.bpmn");
+        modelNamesIndex.push(sampleFileMapping[sample]);
+        uploadedFiles.push(sampleFileMapping[sample]);
+    }
 
-    displayRecentBPMNModels(recentBPMNModels[0].name);
-
-    uploadedFiles.push("dispatch.bpmn");
-    uploadedFiles.push("recourse.bpmn");
-    uploadedFiles.push("credit.bpmn");
-    uploadedFiles.push("restaurant.bpmn");
+    displayRecentBPMNModels(recentBPMNModels[recentBPMNModels.length - 1].name);
 }

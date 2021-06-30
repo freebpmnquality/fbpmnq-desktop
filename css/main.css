@@ -1,113 +1,14 @@
 body {
     font-family: 'Kanit', sans-serif;
+    background-image: url('https://cloudfreebpmnquality.herokuapp.com/storage/img/bg.png');
 }
 
 #header {
     border-radius: 0px;
-    background-image: url("/images/bg-1.png");
     background-position: center;
     background-repeat: no-repeat;
     background-size: cover;
     position: relative;
-}
-
-#demo {
-    margin: 0px;
-    max-width: 100%;
-    margin-top: 1%;
-    margin-bottom: 1%;
-}
-
-#kb-main {
-    padding-top: 50px;
-    padding-bottom: 10px;
-}
-
-#doc-buttons {
-    background-image: url("/images/bg-2.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    position: relative;
-    height: 200px;
-}
-
-#how-to-banner {
-    background-image: url("/images/bg-3.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    position: relative;
-    height: 200px;
-}
-
-#research-banner {
-    background-image: url("/images/bg-6.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    position: relative;
-    height: 200px;
-}
-
-#kbase-banner {
-    background-image: url("/images/bg-3.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    position: relative;
-    height: 200px;
-}
-
-.kb-figure {
-    max-width: 50%;
-}
-
-.kb-card {
-    border-width: 0px;
-}
-
-#automation-banner {
-    background-image: url("/images/bg-4.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    position: relative;
-    height: 200px;
-}
-
-#kb-banner {
-    background-image: url("/images/bg-5.png");
-    background-position: center;
-    background-repeat: no-repeat;
-    background-size: cover;
-    position: relative;
-    height: 200px;
-}
-
-#footer {
-    border-radius: 0px;
-    margin-bottom: 0px;
-}
-
-.roadmap-card {
-    border-width: 0px;
-}
-
-.tech-card {
-    height: 50%;
-}
-
-.download-card {
-    border-width: 0px;
-}
-
-.platform-icon {
-    width: 20%;
-}
-
-.instructions-card {
-    border-width: 0px;
 }
 
 .bpmn-warning {
@@ -116,6 +17,7 @@ body {
     font-size: 14px;
     width: 100%;
     text-align: left;
+    border-radius: 1rem;
 }
 
 #canvas {
@@ -154,10 +56,6 @@ body {
     color: #fff !important;
 }
 
-#zoombuttons {
-    margin-top: 0px;
-}
-
 #workzone {
     margin-top: 0px;
 }
@@ -168,7 +66,7 @@ body {
     background-color: white;
     color: #dc3545;
     border: 1px solid #dc3545;
-    border-radius: .25rem;
+    border-radius: 1rem;
     text-align: center;
     padding: 5px;
     position: absolute;
@@ -187,7 +85,7 @@ body {
     background-color: white;
     color: #28a745;
     border: 1px solid #28a745;
-    border-radius: .25rem;
+    border-radius: 1rem;
     text-align: center;
     padding: 5px;
     position: absolute;
@@ -200,22 +98,6 @@ body {
     visibility: visible;
 }
 
-#samplesForm {
-    margin-top: 1%;
-}
-
-#samplesTip {
-    margin-top: 1%;
-}
-
-#extra-tip {
-    margin-top: 0px;
-}
-
-.hbtn {
-    margin-top: 3px;
-}
-
 .recent-item {
     word-wrap: break-word;
 }
@@ -224,11 +106,7 @@ body {
     margin-bottom: 10px;
     overflow-y: scroll;
     height: 350px;
-}
-
-#recent-header {
-    margin-top: 5px;
-    margin-bottom: 5px;
+    padding-right: 5px;
 }
 
 #file-name {
@@ -236,7 +114,6 @@ body {
 }
 
 #title {
-    background-image: url('https://cloudfreebpmnquality.herokuapp.com/analytics/img/bg.png');
     padding-top: 5%;
     padding-bottom: 5%;
 }
