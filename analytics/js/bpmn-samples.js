@@ -8,7 +8,7 @@ var sampleFileMapping = {
 };
 
 var samples = (fileName) => {
-    const prefix = 'https://raw.githubusercontent.com/freebpmnquality/cloud-services/main/analytics/samples/';
+    const prefix = 'https://raw.githubusercontent.com/freebpmnquality/freebpmnquality.github.io/master/samples/';
 
     return $.ajax({
         type: 'GET',
